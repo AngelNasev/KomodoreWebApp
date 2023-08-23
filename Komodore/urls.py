@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path
 
 from KomodoreApp.views import buyer_registration, seller_registration, home, login_view, car_search, part_search, \
-    get_models, get_years, item_list, add, seller_parts, part_details
+    get_models, get_years, item_list, add, seller_parts, part_details, add_to_cart, shopping_cart, remove_from_cart
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,4 +38,7 @@ urlpatterns = [
     path('add/', add, name='add'),
     path('seller/parts', seller_parts, name='seller_parts'),
     path('details/<int:id>/', part_details, name='part_details'),
+    path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
+    path('remove_from_cart/<int:product_id>/', remove_from_cart, name='remove_from_cart'),
+    path('shopping_cart', shopping_cart, name='shopping_cart')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

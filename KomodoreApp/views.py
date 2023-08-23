@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login
+from django.db.models import F, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -175,7 +176,46 @@ def part_details(request, id):
     context["part"] = part
     is_in_cart = False
     if profile.is_buyer:
-        is_in_cart = ShoppingCart.objects.filter(user=request.user, product=part).exists()
+        cart = ShoppingCart.objects.get(user=request.user)
+        is_in_cart = cart.cart_items.filter(product=part).exists()
     context["is_in_cart"] = is_in_cart
 
     return render(request, "part_details.html", context=context)
+
+
+def add_to_cart(request, product_id):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    if request.method == 'POST':
+        quantity = int(request.POST.get('quantity', 1))
+        product = get_object_or_404(Product, pk=product_id)
+
+        cart, created = ShoppingCart.objects.get_or_create(user=request.user)
+        cart_item, created = cart.cart_items.get_or_create(product=product)
+        cart_item.quantity = quantity
+        cart_item.save()
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+def remove_from_cart(request, product_id):
+    pass
+
+
+def shopping_cart(request):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
+
+    cart = ShoppingCart.objects.get(user=request.user)
+    cart_items = cart.cart_items.select_related('product')
+    context["cart_items"] = cart_items
+
+    total = cart_items.annotate(
+        item_total=F('product__price') * F('quantity')
+    ).aggregate(cart_total=Sum('item_total'))['cart_total'] or 0
+
+    context["total"] = total
+
+    return render(request, "shopping_cart.html", context=context)
