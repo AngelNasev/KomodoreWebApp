@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login
+from django.contrib import messages
 from django.db.models import F, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from KomodoreApp.forms import RegistrationForm, LoginForm, AddProductForm
-from KomodoreApp.models import Profile, Car, Product, ShoppingCart
+from KomodoreApp.models import Profile, Car, Product, ShoppingCart, CartItem, Order, OrderItem
 
 
 # Create your views here.
@@ -198,8 +199,14 @@ def add_to_cart(request, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
-def remove_from_cart(request, product_id):
-    pass
+def remove_from_cart(request, cart_item_id):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    if request.method == 'POST':
+        cart = get_object_or_404(ShoppingCart, user=request.user)
+        cart_item = cart.cart_items.get(id=cart_item_id)
+        cart_item.delete()
+    return redirect('shopping_cart')
 
 
 def shopping_cart(request):
@@ -219,3 +226,30 @@ def shopping_cart(request):
     context["total"] = total
 
     return render(request, "shopping_cart.html", context=context)
+
+
+def checkout(request):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    if request.method == 'POST':
+        cart = ShoppingCart.objects.get(user=request.user)
+        order, created = Order.objects.get_or_create(user=request.user)
+
+        for cart_item in cart.cart_items.all():
+            product = cart_item.product
+            if product.quantity >= cart_item.quantity:
+                order_item, created = order.order_items.get_or_create(product=product, quantity=cart_item.quantity)
+                order_item.save()
+                product.quantity -= cart_item.quantity
+                product.save()
+                cart_item.delete()
+            else:
+                messages.error(request, "Insufficient quantity available for some products.")
+                return redirect('shopping_cart')
+
+        return redirect('payment_method')
+    return redirect('shopping_cart')
+
+
+def payment_method(request):
+    return render(request, "payment_method.html", context=None)

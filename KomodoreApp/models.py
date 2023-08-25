@@ -66,3 +66,23 @@ class CartItem(models.Model):
 
     def total(self):
         return float(self.product.price * int(self.quantity))
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    order_items = models.ManyToManyField('OrderItem')
+    order_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order by {self.user.username} on {self.order_date}"
+
+
+class OrderItem(models.Model):
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.product.name}"
+
+    def total(self):
+        return float(self.product.price * int(self.quantity))
