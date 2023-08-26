@@ -21,7 +21,7 @@ from django.urls import path
 
 from KomodoreApp.views import buyer_registration, seller_registration, home, login_view, car_search, part_search, \
     get_models, get_years, item_list, add, seller_parts, part_details, add_to_cart, shopping_cart, remove_from_cart, \
-    checkout, payment_method
+    checkout, payment_method, process_payment, stripe_payment, order_confirmed, about, contact
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,6 +29,8 @@ urlpatterns = [
     path('seller/register/', seller_registration, name='seller_register'),
     path('login/', login_view, name='login'),
     path('home/', home, name='home'),
+    path('about/', about, name='about'),
+    path('contact/', contact, name='contact'),
     path('get_models/', get_models, name='get_models'),
     path('get_years/', get_years, name='get_years'),
     path('search/car', car_search, name='car_search'),
@@ -43,5 +45,8 @@ urlpatterns = [
     path('remove_from_cart/<int:cart_item_id>/', remove_from_cart, name='remove_from_cart'),
     path('shopping_cart/', shopping_cart, name='shopping_cart'),
     path('checkout/', checkout, name='checkout'),
-    path('payment_method/', payment_method, name='payment_method')
+    path('payment_method/<int:order_id>', payment_method, name='payment_method'),
+    path('process_payment/<int:order_id>', process_payment, name='process_payment'),
+    path('stripe_payment/<int:order_id>', stripe_payment, name='stripe_payment'),
+    path('order_confirmed/', order_confirmed, name='order_confirmed')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

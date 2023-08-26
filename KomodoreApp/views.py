@@ -1,11 +1,15 @@
+import stripe
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.db.models import F, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
+from Komodore import settings
 from KomodoreApp.forms import RegistrationForm, LoginForm, AddProductForm
 from KomodoreApp.models import Profile, Car, Product, ShoppingCart, CartItem, Order, OrderItem
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 # Create your views here.
@@ -80,6 +84,22 @@ def home(request):
         return render(request, "buyer_home.html", context=context)
     if profile.is_seller:
         return render(request, "seller_home.html", context=context)
+
+
+def about(request):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
+    return render(request, "about.html", context=context)
+
+
+def contact(request):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
+    return render(request, "contact.html", context=context)
 
 
 def get_models(request):
@@ -231,9 +251,10 @@ def shopping_cart(request):
 def checkout(request):
     if not request.user.is_authenticated:
         return redirect("/login/")
+
     if request.method == 'POST':
         cart = ShoppingCart.objects.get(user=request.user)
-        order, created = Order.objects.get_or_create(user=request.user)
+        order = Order.objects.create(user=request.user, payment_status='Pending')
 
         for cart_item in cart.cart_items.all():
             product = cart_item.product
@@ -247,9 +268,75 @@ def checkout(request):
                 messages.error(request, "Insufficient quantity available for some products.")
                 return redirect('shopping_cart')
 
-        return redirect('payment_method')
+        return redirect('payment_method', order_id=order.pk)
     return redirect('shopping_cart')
 
 
-def payment_method(request):
-    return render(request, "payment_method.html", context=None)
+def payment_method(request, order_id):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
+    order = get_object_or_404(Order, pk=order_id)
+    context["order"] = order
+    return render(request, "payment_method.html", context)
+
+
+def process_payment(request, order_id):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+
+    order = get_object_or_404(Order, pk=order_id)
+    method = request.POST.get('payment_method')
+
+    if method == 'online':
+        order.payment_status = 'Online'
+        order.save()
+        return redirect('stripe_payment', order_id=order_id)
+    elif method == 'cash':
+        order.payment_status = 'Cash on Delivery'
+        order.save()
+        return redirect('order_confirmation', order_id=order_id)
+
+
+def stripe_payment(request, order_id):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+
+    order = get_object_or_404(Order, pk=order_id)
+    total = order.order_items.annotate(
+        item_total=F('product__price') * F('quantity')
+    ).aggregate(order_total=Sum('item_total'))['order_total'] or 0
+
+    context = {
+        "is_buyer": profile.is_buyer,
+        "is_seller": profile.is_seller,
+        'order': order,
+        'total_amount': int(total * 100),
+        'STRIPE_PUBLISHABLE_KEY': settings.STRIPE_PUBLISHABLE_KEY
+    }
+
+    if request.method == 'POST':
+        try:
+            payment_intent = stripe.Charge.create(
+                amount=int(total * 100),
+                currency='usd',
+                metadata={'order_id': order_id},
+                source=request.POST['stripeToken']
+            )
+            order.payment_status = "Paid"
+            order.save()
+            return redirect('order_confirmed')
+        except stripe.error.StripeError as e:
+            return JsonResponse({'error': str(e)})
+    return render(request, "stripe_payment.html", context)
+
+
+def order_confirmed(request):
+    if not request.user.is_authenticated:
+        return redirect("/login/")
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
+
+    return render(request, "order_confirmed.html", context)
