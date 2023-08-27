@@ -6,6 +6,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
     {% load static %}
+    <link rel="icon" href="{% static 'favicons/favicon.ico' %}" type="image/x-icon">
+    <link rel="shortcut icon" href="{% static 'favicons/favicon.ico' %}" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'favicons/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicons/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicons/favicon-16x16.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'favicons/android-chrome-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'favicons/android-chrome-512x512.png' %}">
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <style>
         button.check-out {
@@ -22,10 +29,7 @@
             border-radius: 20px;
             background: #2165F6;
             box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-        }
-
-        button.check-out:hover {
-            background-color: #D9D9D9;
+            border: none;
         }
 
         .blue {
@@ -82,7 +86,7 @@
         <div class="me-5">
             <form action="/checkout/" method="POST">
                 {% csrf_token %}
-                <button type="submit" class="btn check-out">CHECK-OUT</button>
+                <button type="submit" class="check-out">CHECK-OUT</button>
             </form>
         </div>
     </div>

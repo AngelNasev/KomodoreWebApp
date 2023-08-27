@@ -1,12 +1,13 @@
 import stripe
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import F, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from Komodore import settings
-from KomodoreApp.forms import RegistrationForm, LoginForm, AddProductForm
+from KomodoreApp.forms import RegistrationForm, LoginForm, AddProductForm, ShippingInformationForm
 from KomodoreApp.models import Profile, Car, Product, ShoppingCart, CartItem, Order, OrderItem
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -75,9 +76,8 @@ def login_view(request):
     return render(request, "login.html", context=context)
 
 
+@login_required(login_url="/login/")
 def home(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     if profile.is_buyer:
@@ -86,20 +86,29 @@ def home(request):
         return render(request, "seller_home.html", context=context)
 
 
+@login_required(login_url="/login/")
 def about(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     return render(request, "about.html", context=context)
 
 
+@login_required(login_url="/login/")
 def contact(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     return render(request, "contact.html", context=context)
+
+
+@login_required(login_url="/login/")
+def profile_view(request):
+    profile = Profile.objects.get(user=request.user)
+    user_orders = Order.objects.filter(user=request.user).all()
+    context = {"profile": profile,
+               "is_buyer": profile.is_buyer,
+               "is_seller": profile.is_seller,
+               "orders": user_orders}
+    return render(request, 'profile.html', context=context)
 
 
 def get_models(request):
@@ -115,9 +124,8 @@ def get_years(request):
     return JsonResponse(list(years), safe=False)
 
 
+@login_required(login_url="/login/")
 def car_search(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     if request.method == "POST":
         selected_manufacturer = request.POST.get('manufacturer')
         selected_model = request.POST.get('model')
@@ -132,9 +140,8 @@ def car_search(request):
     return render(request, "search_by_car.html", context=context)
 
 
+@login_required(login_url="/login/")
 def part_search(request, car_id=None):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     if car_id:
@@ -144,9 +151,8 @@ def part_search(request, car_id=None):
     return render(request, "search_by_part.html", context=context)
 
 
+@login_required(login_url="/login/")
 def item_list(request, category, car_id=None):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     if car_id:
@@ -160,9 +166,8 @@ def item_list(request, category, car_id=None):
     return render(request, "item_list.html", context=context)
 
 
+@login_required(login_url="/login/")
 def add(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller, "form": AddProductForm()}
     if profile.is_seller:
@@ -179,21 +184,19 @@ def add(request):
     return render(request, "add.html", context=context)
 
 
+@login_required(login_url="/login/")
 def seller_parts(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller,
                "parts": Product.objects.filter(seller=request.user).all()}
     return render(request, "seller_parts.html", context=context)
 
 
-def part_details(request, id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
+@login_required(login_url="/login/")
+def part_details(request, product_id):
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
-    part = get_object_or_404(Product, pk=id)
+    part = get_object_or_404(Product, pk=product_id)
     context["part"] = part
     is_in_cart = False
     if profile.is_buyer:
@@ -204,9 +207,20 @@ def part_details(request, id):
     return render(request, "part_details.html", context=context)
 
 
+@login_required(login_url="/login/")
+def update_quantity(request, product_id):
+    if request.method == 'POST':
+        new_quantity = int(request.POST.get('new_quantity', 1))
+        product = get_object_or_404(Product, pk=product_id)
+        product.quantity = new_quantity
+        product.save()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False})
+
+
+@login_required(login_url="/login/")
 def add_to_cart(request, product_id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity', 1))
         product = get_object_or_404(Product, pk=product_id)
@@ -219,9 +233,8 @@ def add_to_cart(request, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
+@login_required(login_url="/login/")
 def remove_from_cart(request, cart_item_id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     if request.method == 'POST':
         cart = get_object_or_404(ShoppingCart, user=request.user)
         cart_item = cart.cart_items.get(id=cart_item_id)
@@ -229,9 +242,8 @@ def remove_from_cart(request, cart_item_id):
     return redirect('shopping_cart')
 
 
+@login_required(login_url="/login/")
 def shopping_cart(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
 
@@ -248,13 +260,13 @@ def shopping_cart(request):
     return render(request, "shopping_cart.html", context=context)
 
 
+@login_required(login_url="/login/")
 def checkout(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
-
     if request.method == 'POST':
         cart = ShoppingCart.objects.get(user=request.user)
-        order = Order.objects.create(user=request.user, payment_status='Pending')
+        order = Order.objects.create(user=request.user)
+        order.payment_status = 'Pending'
+        order.save()
 
         for cart_item in cart.cart_items.all():
             product = cart_item.product
@@ -267,43 +279,59 @@ def checkout(request):
             else:
                 messages.error(request, "Insufficient quantity available for some products.")
                 return redirect('shopping_cart')
-
-        return redirect('payment_method', order_id=order.pk)
+        return redirect('shipping_information', order_id=order.pk)
     return redirect('shopping_cart')
 
 
+@login_required(login_url="/login/")
+def shipping_information(request, order_id):
+    profile = Profile.objects.get(user=request.user)
+    context = {"is_buyer": profile.is_buyer,
+               "is_seller": profile.is_seller,
+               "form": ShippingInformationForm()}
+
+    order = get_object_or_404(Order, pk=order_id)
+    context["order"] = order
+    if request.method == 'POST':
+        form_data = ShippingInformationForm(data=request.POST)
+        if form_data.is_valid():
+            order.shipping_address = form_data.cleaned_data["shipping_address"]
+            order.shipping_note = form_data.cleaned_data["shipping_note"]
+            order.shipping_city = form_data.cleaned_data["shipping_city"]
+            order.shipping_postal_code = form_data.cleaned_data["shipping_postal_code"]
+            order.shipping_country = form_data.cleaned_data["shipping_country"]
+            order.save()
+            return redirect('payment_method', order_id=order.pk)
+
+    return render(request, "shipping_information.html", context=context)
+
+
+@login_required(login_url="/login/")
 def payment_method(request, order_id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
     order = get_object_or_404(Order, pk=order_id)
     context["order"] = order
-    return render(request, "payment_method.html", context)
+    return render(request, "payment_method.html", context=context)
 
 
+@login_required(login_url="/login/")
 def process_payment(request, order_id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
-
     order = get_object_or_404(Order, pk=order_id)
     method = request.POST.get('payment_method')
-
-    if method == 'online':
-        order.payment_status = 'Online'
+    if method == "online":
+        order.payment_method = "Online"
         order.save()
         return redirect('stripe_payment', order_id=order_id)
     elif method == 'cash':
-        order.payment_status = 'Cash on Delivery'
+        order.payment_method = "Cash on Delivery"
         order.save()
         return redirect('order_confirmation', order_id=order_id)
 
 
+@login_required(login_url="/login/")
 def stripe_payment(request, order_id):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
-
     order = get_object_or_404(Order, pk=order_id)
     total = order.order_items.annotate(
         item_total=F('product__price') * F('quantity')
@@ -330,13 +358,12 @@ def stripe_payment(request, order_id):
             return redirect('order_confirmed')
         except stripe.error.StripeError as e:
             return JsonResponse({'error': str(e)})
-    return render(request, "stripe_payment.html", context)
+    return render(request, "stripe_payment.html", context=context)
 
 
+@login_required(login_url="/login/")
 def order_confirmed(request):
-    if not request.user.is_authenticated:
-        return redirect("/login/")
     profile = Profile.objects.get(user=request.user)
     context = {"is_buyer": profile.is_buyer, "is_seller": profile.is_seller}
 
-    return render(request, "order_confirmed.html", context)
+    return render(request, "order_confirmed.html", context=context)

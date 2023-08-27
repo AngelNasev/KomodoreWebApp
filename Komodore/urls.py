@@ -14,23 +14,30 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.views import LogoutView
+from django.shortcuts import redirect
 from django.urls import path
 
 from KomodoreApp.views import buyer_registration, seller_registration, home, login_view, car_search, part_search, \
     get_models, get_years, item_list, add, seller_parts, part_details, add_to_cart, shopping_cart, remove_from_cart, \
-    checkout, payment_method, process_payment, stripe_payment, order_confirmed, about, contact
+    checkout, shipping_information, payment_method, process_payment, stripe_payment, order_confirmed, about, contact, \
+    update_quantity, profile_view
 
 urlpatterns = [
+    path('', lambda request: redirect('home'), name='root_redirect'),
     path('admin/', admin.site.urls),
     path('buyer/register/', buyer_registration, name='buyer_register'),
     path('seller/register/', seller_registration, name='seller_register'),
     path('login/', login_view, name='login'),
+    path('logout/', LogoutView.as_view(next_page='/login/'), name='logout'),
     path('home/', home, name='home'),
     path('about/', about, name='about'),
     path('contact/', contact, name='contact'),
+    path('profile/', profile_view, name='profile_view'),
     path('get_models/', get_models, name='get_models'),
     path('get_years/', get_years, name='get_years'),
     path('search/car', car_search, name='car_search'),
@@ -40,11 +47,13 @@ urlpatterns = [
     path('item_list/<str:category>/', item_list, name='item_list_without_car'),
     path('add/', add, name='add'),
     path('seller/parts', seller_parts, name='seller_parts'),
-    path('details/<int:id>/', part_details, name='part_details'),
+    path('details/<int:product_id>/', part_details, name='part_details'),
+    path('update_quantity/<int:product_id>/', update_quantity, name='update_quantity'),
     path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
     path('remove_from_cart/<int:cart_item_id>/', remove_from_cart, name='remove_from_cart'),
     path('shopping_cart/', shopping_cart, name='shopping_cart'),
     path('checkout/', checkout, name='checkout'),
+    path('shipping_information/<int:order_id>', shipping_information, name='shipping_information'),
     path('payment_method/<int:order_id>', payment_method, name='payment_method'),
     path('process_payment/<int:order_id>', process_payment, name='process_payment'),
     path('stripe_payment/<int:order_id>', stripe_payment, name='stripe_payment'),

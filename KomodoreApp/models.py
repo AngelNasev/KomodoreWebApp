@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Sum, F
 
 
 # Create your models here.
@@ -74,9 +75,17 @@ class Order(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Paid', 'Paid')])
     payment_method = models.CharField(max_length=20, choices=[('Online', 'Online'), ('Cash', 'Cash on Delivery')])
+    shipping_address = models.CharField(max_length=150)
+    shipping_note = models.TextField(blank=True)
+    shipping_city = models.CharField(max_length=100)
+    shipping_postal_code = models.CharField(max_length=20)
+    shipping_country = models.CharField(max_length=100)
 
     def __str__(self):
         return f"Order by {self.user.username} on {self.order_date}"
+
+    def total(self):
+        return self.order_items.aggregate(order_total=Sum(F('product__price') * F('quantity')))['order_total'] or 0
 
 
 class OrderItem(models.Model):

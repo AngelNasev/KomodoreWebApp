@@ -2,14 +2,14 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from KomodoreApp.models import Product
+from KomodoreApp.models import Product, Order
 
 
 class RegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super(RegistrationForm, self).__init__(*args, **kwargs)
         for field in self.visible_fields():
-            field.field.widget.attrs["class"] = "form-control"
+            field.field.widget.attrs["class"] = "form-control w-75 mx-auto"
             field.field.widget.attrs["style"] = "border-radius: 20px; border: 2px solid #2165F6;"
             field.field.widget.attrs["placeholder"] = field.label
             field.label = ""
@@ -63,3 +63,21 @@ class AddProductForm(forms.ModelForm):
     class Meta:
         model = Product
         exclude = ("seller", )
+
+
+class ShippingInformationForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ShippingInformationForm, self).__init__(*args, **kwargs)
+        for field in self.visible_fields():
+            field.field.widget.attrs["class"] = "form-control w-75 mx-auto"
+            field.field.widget.attrs["style"] = "border-radius: 20px; border: 2px solid #2165F6;"
+            field.field.widget.attrs["placeholder"] = field.label
+            field.label = ""
+            field.help_text = ""
+
+        self.fields["shipping_note"].widget.attrs["rows"] = 4
+        self.fields["shipping_note"].widget.attrs["cols"] = 40
+
+    class Meta:
+        model = Order
+        fields = ['shipping_address', 'shipping_note', 'shipping_city', 'shipping_postal_code', 'shipping_country']
