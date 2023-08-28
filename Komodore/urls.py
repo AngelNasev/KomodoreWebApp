@@ -25,7 +25,7 @@ from django.urls import path
 from KomodoreApp.views import buyer_registration, seller_registration, home, login_view, car_search, part_search, \
     get_models, get_years, item_list, add, seller_parts, part_details, add_to_cart, shopping_cart, remove_from_cart, \
     checkout, shipping_information, payment_method, process_payment, stripe_payment, order_confirmed, about, contact, \
-    update_quantity, profile_view
+    update_quantity, profile_view, remove_product
 
 urlpatterns = [
     path('', lambda request: redirect('home'), name='root_redirect'),
@@ -49,6 +49,7 @@ urlpatterns = [
     path('seller/parts', seller_parts, name='seller_parts'),
     path('details/<int:product_id>/', part_details, name='part_details'),
     path('update_quantity/<int:product_id>/', update_quantity, name='update_quantity'),
+    path('remove_product/<int:product_id>/', remove_product, name='remove_product'),
     path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
     path('remove_from_cart/<int:cart_item_id>/', remove_from_cart, name='remove_from_cart'),
     path('shopping_cart/', shopping_cart, name='shopping_cart'),

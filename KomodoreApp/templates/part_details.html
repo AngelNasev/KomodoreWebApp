@@ -113,6 +113,34 @@
             overflow: hidden;
             word-wrap: break-word;
         }
+
+        .seller-btn {
+            text-decoration: none;
+            opacity: 1;
+            display: flex;
+            width: 143px;
+            height: 60px;
+            padding: 5px 0 5px;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            border-radius: 20px;
+            border: none;
+            filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+            color: #FFF;
+            background: #D9534F;
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: normal;
+        }
+
+        #quantityBtn {
+            background-color: #2165F6;
+        }
     </style>
 </head>
 <body>
@@ -142,6 +170,7 @@
                 {{part.warranty}}
             </h4>
         </div>
+        {% if is_buyer %}
         <form action="{% url 'add_to_cart' part.pk %}" method="post">
             {% csrf_token %}
             <div class="quantity-picker mt-3 mb-4">
@@ -154,42 +183,63 @@
                     <button class="quantity-btn plus-btn btn btn-outline-primary" type="button">+</button>
                 </div>
             </div>
-
             <div>
-                {% if is_buyer %}
                 {% if is_in_cart%}
                 <a href="/shopping_cart" class="go-to-cart">GO TO CART</a>
                 {% else %}
                 <button type="submit" class="add-to-cart">+ ADD TO CART</button>
                 {% endif %}
-                {% else %}
-                <button id="quantityBtn" class="add-to-cart" type="button" data-part-id="{{part.pk}}" data-bs-toggle="modal" data-bs-target="#quantityModal">
-                    UPDATE QUANTITY
-                </button>
-                {% endif %}
-                <div class="modal fade" id="quantityModal" tabindex="-1" aria-labelledby="quantityModalLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="quantityModalLabel">Update Quantity</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <label for="newQuantity">New Quantity:</label>
-                                <input type="number" id="newQuantity" class="form-control" value="{{ part.quantity }}"
-                                       min="0">
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary" id="updateBtn">Update</button>
-                            </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="quantity-picker mt-3 mb-4">
+            <label for="quantity">Quantity</label><br>
+            <div class="input-group mt-1 mb-3 w-40">
+                <button class="quantity-btn minus-btn btn btn-outline-danger" type="button">-</button>
+                <input id="quantity-1" name="quantity" type="number" class="quantity-input form-control" value="1"
+                       min="1"
+                       max="{{ part.quantity }}">
+                <button class="quantity-btn plus-btn btn btn-outline-primary" type="button">+</button>
+            </div>
+        </div>
+        <div>
+            <div class="d-flex align-items-start justify-content-start gap-1">
+                <div>
+                    <button id="quantityBtn" class="seller-btn" type="button" data-part-id="{{part.pk}}"
+                            data-bs-toggle="modal" data-bs-target="#quantityModal">
+                        UPDATE QUANTITY
+                    </button>
+                </div>
+                <div>
+                    <form action="{% url 'remove_product' product_id=part.pk %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="seller-btn">REMOVE</button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal fade" id="quantityModal" tabindex="-1" aria-labelledby="quantityModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="quantityModalLabel">Update Quantity</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label for="newQuantity">New Quantity:</label>
+                            <input type="number" id="newQuantity" class="form-control" value="{{ part.quantity }}"
+                                   min="0">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="updateBtn">Update</button>
                         </div>
                     </div>
                 </div>
             </div>
-        </form>
+        </div>
+        {% endif %}
         <div class="gray-border mt-3 px-2">
             <p class="characteristics inter" style="max-width: 200px">{{ part.characteristics|linebreaks }}</p>
         </div>
@@ -228,7 +278,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: '/update_quantity/'+partId+'/',
+                url: '/update_quantity/' + partId + '/',
                 data: {
                     csrfmiddlewaretoken: '{{ csrf_token }}',
                     new_quantity: newQuantity,

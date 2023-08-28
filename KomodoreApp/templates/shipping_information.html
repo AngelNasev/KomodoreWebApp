@@ -14,6 +14,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'favicons/android-chrome-192x192.png' %}">
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'favicons/android-chrome-512x512.png' %}">
     <link rel="stylesheet" href="{% static 'style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
     <style>
         .shipping-box {
             width: 811px;
@@ -64,7 +70,15 @@
     </div>
     <form action="{% url 'shipping_information' order_id=order.pk %}" class="my-5 px-3" method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+
+        {% for field in form %}
+        <div class="form-group pt-3">
+            {{ field }}
+            {% if field.errors %}
+            {% endif %}
+        </div>
+        {% endfor %}
+
         <button class="submit-btn mx-auto my-4" type="submit">PAYMENT OPTIONS</button>
     </form>
 </div>

@@ -81,7 +81,7 @@
                     <label for="year-dropdown">Year</label>
                 </div>
                 <br>
-                <button class="pill-btn mx-auto mt-2 opacity-1" type="submit">Shop</button>
+                <button id="shop-button" class="pill-btn mx-auto mt-2 opacity-1" disabled type="submit">SHOP</button>
             </form>
         </div>
     </div>
@@ -95,6 +95,8 @@
         const manufacturerDropdown = $('#manufacturer-dropdown');
         const modelDropdown = $('#model-dropdown');
         const yearDropdown = $('#year-dropdown');
+        const shopButton = $('#shop-button');
+
         manufacturerDropdown.on('change', function () {
             const selectedManufacturer = $(this).val();
             $.get('/get_models/', {manufacturer: selectedManufacturer}, function (data) {
@@ -106,6 +108,7 @@
                 yearDropdown.prop('disabled', true)
                 yearDropdown.empty().append('<option value="">Select a model first</option>');
             });
+            updateShopButtonState();
         });
         modelDropdown.on('change', function () {
             const selectedManufacturer = manufacturerDropdown.val();
@@ -117,7 +120,19 @@
                     yearDropdown.append('<option value="' + year + '">' + year + '</option>');
                 });
             });
+            updateShopButtonState();
         });
+         yearDropdown.on('change', function () {
+            updateShopButtonState();
+        });
+
+        function updateShopButtonState() {
+            if (manufacturerDropdown.val() && modelDropdown.val() && yearDropdown.val()) {
+                shopButton.prop('disabled', false);
+            } else {
+                shopButton.prop('disabled', true);
+            }
+        }
     });
 </script>
 </body>

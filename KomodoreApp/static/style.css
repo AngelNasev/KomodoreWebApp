@@ -81,6 +81,12 @@
     box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 }
 
+.pill-btn:disabled {
+    background-color: #d9e1f5;
+    color: #7e99d6;
+    cursor: not-allowed;
+}
+
 .custom {
     opacity: 1;
 }

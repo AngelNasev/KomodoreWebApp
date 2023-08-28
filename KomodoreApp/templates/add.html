@@ -14,6 +14,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'favicons/android-chrome-192x192.png' %}">
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'favicons/android-chrome-512x512.png' %}">
     <link rel="stylesheet" href="{% static 'style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
     <style>
         button.submit {
             opacity: 1;
@@ -68,45 +74,63 @@
     <div class="custom ms-4 pt-4">
         <h4 class="box-title">Add a new product</h4>
     </div>
-    <form action="/add/" method="POST" class="my-4 px-3" enctype="multipart/form-data">
+    <form action="/add/" method="POST" class="my-4 px-5" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-group me-3 small-input-1">
             {{ form.name.label_tag }}
             {{ form.name }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-group small-input-2">
             {{ form.price.label_tag }}
             {{ form.price }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-group me-3 small-input-2">
             {{ form.quantity.label_tag }}
             {{ form.quantity }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-group small-input-1">
             {{ form.image.label_tag }}
             {{ form.image }}
+            {% if field.errors %}
+            {% endif %}
         </div>
 
         <div class="form-floating">
             {{ form.warranty.label_tag }}
             {{ form.warranty }}
+            {% if field.errors %}
+            {% endif %}
             <label for="{{ form.warranty.id_for_label }}">Warranty</label>
         </div>
         <div class="form-group">
             {{ form.characteristics.label_tag }}
             {{ form.characteristics }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-group">
             {{ form.description.label_tag }}
             {{ form.description }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-group">
             {{ form.cars.label_tag }}
             {{ form.cars }}
+            {% if field.errors %}
+            {% endif %}
         </div>
         <div class="form-floating">
             {{ form.category.label_tag }}
             {{ form.category }}
+            {% if field.errors %}
+            {% endif %}
             <label for="{{ form.category.id_for_label }}">Category</label>
         </div>
         <button class="submit mx-auto mt-3" type="submit">ADD PRODUCT</button>

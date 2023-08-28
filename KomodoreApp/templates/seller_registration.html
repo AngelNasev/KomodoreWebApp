@@ -14,6 +14,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'favicons/android-chrome-192x192.png' %}">
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'favicons/android-chrome-512x512.png' %}">
     <link rel="stylesheet" href="{% static 'style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
 </head>
 <body class="gray-background">
 {% include 'navbar.html' %}
@@ -25,12 +31,20 @@
         </div>
         <form action="/seller/register/" method="POST" class="mt-5 mb-3 px-3" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ form.as_p }}
+
+            {% for field in form %}
+            <div class="form-group pt-3">
+                {{ field }}
+                {% if field.errors %}
+                {% endif %}
+            </div>
+            {% endfor %}
+
             <div class="text-center">
                 <a href="/buyer/register/">Want to buy autoparts? Click here</a><br>
-                <a href="/login/">Log in</a>
+                <a href="/login/">LOG IN</a>
             </div>
-            <button class="pill-btn mx-auto mt-3" type="submit">Register</button>
+            <button class="pill-btn mx-auto mt-3" type="submit">REGISTER</button>
         </form>
     </div>
 </div>

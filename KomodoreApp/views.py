@@ -24,15 +24,18 @@ def buyer_registration(request):
             user.set_password(password)
             user.save()
             user = authenticate(username=user.username, password=password)
-            login_view(request, user)
-            profile = Profile()
-            profile.user = user
-            profile.is_buyer = True
-            profile.is_seller = False
-            profile.save()
-            shopping_cart = ShoppingCart(user=user)
-            shopping_cart.save()
-            return redirect("home")
+            if user is not None:
+                login(request, user)
+                profile = Profile()
+                profile.user = user
+                profile.is_buyer = True
+                profile.is_seller = False
+                profile.save()
+                shopping_cart = ShoppingCart(user=user)
+                shopping_cart.save()
+                return redirect("home")
+        else:
+            context["form"] = form_data
 
     return render(request, "buyer_registration.html", context=context)
 
@@ -48,14 +51,17 @@ def seller_registration(request):
             user.set_password(password)
             user.save()
             user = authenticate(username=user.username, password=password)
-            login_view(request, user)
-            profile = Profile()
-            profile.user = user
-            profile.is_buyer = False
-            profile.is_seller = True
-            profile.save()
+            if user is not None:
+                login(request, user)
+                profile = Profile()
+                profile.user = user
+                profile.is_buyer = False
+                profile.is_seller = True
+                profile.save()
+                return redirect("home")
+        else:
+            context["form"] = form_data
 
-            return redirect("home")
     return render(request, "seller_registration.html", context=context)
 
 
@@ -72,7 +78,7 @@ def login_view(request):
                 login(request, user)
                 return redirect("home")
             else:
-                pass
+                messages.error(request, 'Invalid username or password. Please try again.')
     return render(request, "login.html", context=context)
 
 
@@ -179,6 +185,8 @@ def add(request):
                 product.image = form_data.cleaned_data["image"]
                 product.save()
                 return redirect("seller_parts")
+            else:
+                context["form"] = form_data
     else:
         return redirect("/login/")
     return render(request, "add.html", context=context)
@@ -205,6 +213,13 @@ def part_details(request, product_id):
     context["is_in_cart"] = is_in_cart
 
     return render(request, "part_details.html", context=context)
+
+
+@login_required(login_url="/login/")
+def remove_product(request, product_id):
+    product = get_object_or_404(Product, pk=product_id, seller=request.user)
+    product.delete()
+    return redirect("seller_parts")
 
 
 @login_required(login_url="/login/")
@@ -280,6 +295,7 @@ def checkout(request):
                 messages.error(request, "Insufficient quantity available for some products.")
                 return redirect('shopping_cart')
         return redirect('shipping_information', order_id=order.pk)
+
     return redirect('shopping_cart')
 
 
@@ -302,6 +318,8 @@ def shipping_information(request, order_id):
             order.shipping_country = form_data.cleaned_data["shipping_country"]
             order.save()
             return redirect('payment_method', order_id=order.pk)
+        else:
+            context["form"] = form_data
 
     return render(request, "shipping_information.html", context=context)
 
@@ -326,7 +344,7 @@ def process_payment(request, order_id):
     elif method == 'cash':
         order.payment_method = "Cash on Delivery"
         order.save()
-        return redirect('order_confirmation', order_id=order_id)
+        return redirect('order_confirmed')
 
 
 @login_required(login_url="/login/")
